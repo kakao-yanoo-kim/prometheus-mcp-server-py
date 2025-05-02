@@ -1,0 +1,23 @@
+FROM python:3.10-slim
+
+LABEL maintainer="kakao-yanoo-kim"
+LABEL description="Prometheus MCP Server - Model Context Protocol server for Prometheus"
+
+WORKDIR /app
+
+# Install dependencies
+COPY pyproject.toml README.md ./
+COPY prometheus_mcp/ ./prometheus_mcp/
+COPY main.py ./
+
+# Install the package locally
+RUN pip install --no-cache-dir -e .
+
+# Expose the default MCP port if needed
+# Note: MCP uses stdio by default, so no port is required unless configured differently
+
+# Run as non-root user for better security
+RUN adduser --disabled-password --gecos "" appuser
+USER appuser
+
+ENTRYPOINT ["prometheus-mcp"]
