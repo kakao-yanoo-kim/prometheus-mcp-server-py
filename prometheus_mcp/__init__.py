@@ -22,6 +22,9 @@ class PrometheusConfig:
     token: Optional[str] = None
     # Optional Org ID for multi-tenant setups
     org_id: Optional[str] = None
+    # Query parameters
+    timeout: int = 30
+    limit: int = 1000
 
 # This will be populated by parse_arguments in setup_environment
 config: PrometheusConfig = None
@@ -63,12 +66,15 @@ def make_prometheus_request(endpoint, params=None):
     return result["data"]
 
 @mcp.tool(description="Execute a PromQL instant query against Prometheus")
-async def execute_query(query: str, time: Optional[str] = None) -> Dict[str, Any]:
+async def execute_query(query: str, time: Optional[str] = None, timeout: Optional[int] = None, 
+                       limit: Optional[int] = None) -> Dict[str, Any]:
     """Execute an instant query against Prometheus.
     
     Args:
         query: PromQL query string
         time: Optional RFC3339 or Unix timestamp (default: current time)
+        timeout: Evaluation timeout in seconds (default: 30s)
+        limit: Maximum number of returned series (default: 1000)
         
     Returns:
         Query result with type (vector, matrix, scalar, string) and values
@@ -77,6 +83,15 @@ async def execute_query(query: str, time: Optional[str] = None) -> Dict[str, Any
     if time:
         params["time"] = time
     
+    # Apply timeout and limit parameters
+    if timeout is None:
+        timeout = config.timeout
+    if limit is None:
+        limit = config.limit
+    
+    params["timeout"] = str(timeout)
+    params["limit"] = str(limit)
+    
     data = make_prometheus_request("query", params=params)
     return {
         "resultType": data["resultType"],
@@ -84,7 +99,8 @@ async def execute_query(query: str, time: Optional[str] = None) -> Dict[str, Any
     }
 
 @mcp.tool(description="Execute a PromQL range query with start time, end time, and step interval")
-async def execute_range_query(query: str, start: str, end: str, step: str) -> Dict[str, Any]:
+async def execute_range_query(query: str, start: str, end: str, step: str, 
+                             timeout: Optional[int] = None, limit: Optional[int] = None) -> Dict[str, Any]:
     """Execute a range query against Prometheus.
     
     Args:
@@ -92,6 +108,8 @@ async def execute_range_query(query: str, start: str, end: str, step: str) -> Di
         start: Start time as RFC3339 or Unix timestamp
         end: End time as RFC3339 or Unix timestamp
         step: Query resolution step width (e.g., '15s', '1m', '1h')
+        timeout: Evaluation timeout in seconds (default: 30s)
+        limit: Maximum number of returned series (default: 1000)
         
     Returns:
         Range query result with type (usually matrix) and values over time
@@ -103,11 +121,37 @@ async def execute_range_query(query: str, start: str, end: str, step: str) -> Di
         "step": step
     }
     
+    # Apply timeout and limit parameters
+    if timeout is None:
+        timeout = config.timeout
+    if limit is None:
+        limit = config.limit
+    
+    params["timeout"] = str(timeout)
+    params["limit"] = str(limit)
+    
     data = make_prometheus_request("query_range", params=params)
     return {
         "resultType": data["resultType"],
         "result": data["result"]
     }
+
+@mcp.tool(description="Get all alerting and recording rules currently loaded in Prometheus")
+async def get_rules(type: Optional[str] = None) -> Dict[str, Any]:
+    """Retrieve alerting and recording rules that are currently loaded in Prometheus.
+    
+    Args:
+        type: Optional filter to only return rules of a certain type ('alert' or 'recording')
+        
+    Returns:
+        Dictionary containing groups of rules with their current state
+    """
+    params = {}
+    if type:
+        params["type"] = type
+    
+    data = make_prometheus_request("rules", params=params)
+    return data
 
 @mcp.tool(description="List all available metrics in Prometheus")
 async def list_metrics() -> List[str]:
@@ -119,32 +163,28 @@ async def list_metrics() -> List[str]:
     data = make_prometheus_request("label/__name__/values")
     return data
 
-@mcp.tool(description="Get metadata for a specific metric")
-async def get_metric_metadata(metric: str) -> List[Dict[str, Any]]:
-    """Get metadata about a specific metric.
+@mcp.tool(description="List all available label names")
+async def get_labels() -> List[str]:
+    """Retrieve a list of all label names available in Prometheus.
+    
+    Returns:
+        List of label names as strings
+    """
+    data = make_prometheus_request("labels")
+    return data
+
+@mcp.tool(description="Get all values for a specific label")
+async def get_label_values(label: str) -> List[str]:
+    """Retrieve all values for a given label name.
     
     Args:
-        metric: The name of the metric to retrieve metadata for
+        label: The name of the label to retrieve values for
         
     Returns:
-        List of metadata entries for the metric
+        List of label values as strings
     """
-    params = {"metric": metric}
-    data = make_prometheus_request("metadata", params=params)
-    return data["metadata"]
-
-@mcp.tool(description="Get information about all scrape targets")
-async def get_targets() -> Dict[str, List[Dict[str, Any]]]:
-    """Get information about all Prometheus scrape targets.
-    
-    Returns:
-        Dictionary with active and dropped targets information
-    """
-    data = make_prometheus_request("targets")
-    return {
-        "activeTargets": data["activeTargets"],
-        "droppedTargets": data["droppedTargets"]
-    }
+    data = make_prometheus_request(f"label/{label}/values")
+    return data
 
 def setup_environment(url=None, username=None, password=None, token=None, org_id=None):
     """Set up the environment by applying configuration from command line arguments."""
@@ -176,12 +216,19 @@ def setup_environment(url=None, username=None, password=None, token=None, org_id
     
     return True
 
-def run_server(url=None, username=None, password=None, token=None, org_id=None):
+def run_server(url=None, username=None, password=None, token=None, org_id=None, timeout=30, limit=1000):
     """Main entry point for the Prometheus MCP Server"""
     # Setup environment
     if not setup_environment(url, username, password, token, org_id):
         sys.exit(1)
     
+    # Update config with timeout and limit values
+    global config
+    config.timeout = timeout
+    config.limit = limit
+    
+    print(f"Query timeout: {config.timeout}s")
+    print(f"Query result limit: {config.limit}")
     print("\nStarting Prometheus MCP Server...")
     print("Running server in standard mode...")
     

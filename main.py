@@ -16,6 +16,8 @@ class PrometheusConfig:
     password: Optional[str] = None
     token: Optional[str] = None
     org_id: Optional[str] = None
+    timeout: int = 30
+    limit: int = 1000
 
 # Global config variable, to be populated in setup_environment
 config: PrometheusConfig
@@ -61,26 +63,72 @@ def make_prometheus_request(endpoint: str, params: Dict[str, Any] = None) -> Any
     return body.get("data")
 
 @mcp.tool
-def execute_query(query: str, time: Optional[str] = None) -> Dict[str, Any]:
+def execute_query(query: str, time: Optional[str] = None, timeout: Optional[int] = None, limit: Optional[int] = None) -> Dict[str, Any]:
     """
     Execute an instant PromQL query.
     Returns the resultType and result array.
+    
+    Parameters:
+    - query: The PromQL query string
+    - time: Optional evaluation timestamp
+    - timeout: Evaluation timeout in seconds (defaults to 30s if not specified)
+    - limit: Maximum number of returned series (defaults to 1000 if not specified)
     """
     params = {"query": query}
     if time:
         params["time"] = time
+    if timeout is None:
+        timeout = config.timeout
+    if limit is None:
+        limit = config.limit
+    
+    params["timeout"] = str(timeout)
+    params["limit"] = str(limit)
+    
     data = make_prometheus_request("query", params)
     return {"resultType": data.get("resultType"), "result": data.get("result")}
 
 @mcp.tool
-def execute_range_query(query: str, start: str, end: str, step: str) -> Dict[str, Any]:
+def execute_range_query(query: str, start: str, end: str, step: str, timeout: Optional[int] = None, limit: Optional[int] = None) -> Dict[str, Any]:
     """
     Execute a PromQL range query.
     Returns the resultType and result array.
+    
+    Parameters:
+    - query: The PromQL query string
+    - start: Start timestamp
+    - end: End timestamp
+    - step: Query resolution step width
+    - timeout: Evaluation timeout in seconds (defaults to 30s if not specified)
+    - limit: Maximum number of returned series (defaults to 1000 if not specified)
     """
     params = {"query": query, "start": start, "end": end, "step": step}
+    
+    if timeout is None:
+        timeout = config.timeout
+    if limit is None:
+        limit = config.limit
+    
+    params["timeout"] = str(timeout)
+    params["limit"] = str(limit)
+    
     data = make_prometheus_request("query_range", params)
     return {"resultType": data.get("resultType"), "result": data.get("result")}
+
+@mcp.tool
+def get_rules(type: Optional[str] = None) -> Dict[str, Any]:
+    """
+    Retrieve alerting and recording rules that are currently loaded.
+    Returns groups of rules with their current state.
+    
+    Parameters:
+    - type: Optional filter to only return rules of a certain type ('alert' or 'recording')
+    """
+    params = {}
+    if type:
+        params["type"] = type
+    
+    return make_prometheus_request("rules", params)
 
 @mcp.tool
 def list_metrics() -> List[str]:
@@ -90,19 +138,18 @@ def list_metrics() -> List[str]:
     return make_prometheus_request("label/__name__/values")
 
 @mcp.tool
-def get_metric_metadata(metric: str) -> List[Dict[str, Any]]:
+def get_labels() -> List[str]:
     """
-    Retrieve metadata for a given metric name.
+    List all available label names.
     """
-    return make_prometheus_request("metadata", {"metric": metric})
+    return make_prometheus_request("labels")
 
 @mcp.tool
-def get_targets() -> Dict[str, List[Dict[str, Any]]]:
+def get_label_values(label: str) -> List[str]:
     """
-    Retrieve active and dropped scrape targets.
+    Retrieve all values for a given label name.
     """
-    data = make_prometheus_request("targets")
-    return {"active": data.get("activeTargets", []), "dropped": data.get("droppedTargets", [])}
+    return make_prometheus_request(f"label/{label}/values")
 
 
 def parse_arguments():
@@ -115,6 +162,8 @@ def parse_arguments():
     parser.add_argument("--password", help="Password for basic authentication")
     parser.add_argument("--token", help="Token for authentication")
     parser.add_argument("--org-id", help="Organization ID for multi-tenancy")
+    parser.add_argument("--timeout", type=int, default=30, help="Evaluation timeout in seconds (default: 30)")
+    parser.add_argument("--limit", type=int, default=1000, help="Maximum number of returned series (default: 1000)")
     
     return parser.parse_args()
 
@@ -133,6 +182,8 @@ def setup_environment() -> bool:
         password=args.password,
         token=args.token,
         org_id=args.org_id,
+        timeout=args.timeout,
+        limit=args.limit,
     )
     
     if not config.url:
@@ -146,11 +197,13 @@ def setup_environment() -> bool:
         print("Using token authentication")
     if config.org_id:
         print(f"Using Org ID: {config.org_id}")
+    print(f"Query timeout: {config.timeout}s")
+    print(f"Query result limit: {config.limit}")
         
     return True
 
 
-def run_server(url=None, username=None, password=None, token=None, org_id=None):
+def run_server(url=None, username=None, password=None, token=None, org_id=None, timeout=30, limit=1000):
     """
     Validate environment and start the MCP server over stdio.
     """
@@ -163,6 +216,8 @@ def run_server(url=None, username=None, password=None, token=None, org_id=None):
         password=password,
         token=token,
         org_id=org_id,
+        timeout=timeout,
+        limit=limit,
     )
     
     if not config.url:
@@ -176,6 +231,8 @@ def run_server(url=None, username=None, password=None, token=None, org_id=None):
         print("Using token authentication")
     if config.org_id:
         print(f"Using Org ID: {config.org_id}")
+    print(f"Query timeout: {config.timeout}s")
+    print(f"Query result limit: {config.limit}")
     
     # Run the server with stdio transport
     mcp.run(transport="stdio")
@@ -189,5 +246,7 @@ if __name__ == "__main__":
         username=args.username,
         password=args.password,
         token=args.token,
-        org_id=args.org_id
+        org_id=args.org_id,
+        timeout=args.timeout,
+        limit=args.limit
     )

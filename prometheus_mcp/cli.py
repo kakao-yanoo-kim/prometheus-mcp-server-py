@@ -12,6 +12,8 @@ def parse_arguments():
     parser.add_argument("--password", help="Password for basic authentication")
     parser.add_argument("--token", help="Token for authentication")
     parser.add_argument("--org-id", help="Organization ID for multi-tenancy")
+    parser.add_argument("--timeout", type=int, default=30, help="Evaluation timeout in seconds (default: 30)")
+    parser.add_argument("--limit", type=int, default=1000, help="Maximum number of returned series (default: 1000)")
     
     return parser.parse_args()
 
@@ -24,7 +26,9 @@ def main():
         username=args.username,
         password=args.password,
         token=args.token,
-        org_id=args.org_id
+        org_id=args.org_id,
+        timeout=args.timeout,
+        limit=args.limit
     )
     return 0
 

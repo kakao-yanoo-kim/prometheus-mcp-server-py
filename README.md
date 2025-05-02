@@ -47,3 +47,5 @@ prometheus-mcp --url http://your-prometheus-server:9090 \
 - `--password`: Password for basic authentication (optional)
 - `--token`: Token for authentication (optional)
 - `--org-id`: Organization ID for multi-tenant setups (optional)
+- `--timeout`: Evaluation timeout in seconds (default: 30)
+- `--limit`: Maximum number of returned series (default: 1000)
