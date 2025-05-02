@@ -1,9 +1,19 @@
 # Prometheus MCP Server
+[![smithery badge](https://smithery.ai/badge/@kakao-yanoo-kim/prometheus-mcp-server-py)](https://smithery.ai/server/@kakao-yanoo-kim/prometheus-mcp-server-py)
 
 A tool that allows access to Prometheus data through a Model Context Protocol server.
 
 ## Installation
 
+### Installing via Smithery
+
+To install Prometheus Data Access Server for Claude Desktop automatically via [Smithery](https://smithery.ai/server/@kakao-yanoo-kim/prometheus-mcp-server-py):
+
+```bash
+npx -y @smithery/cli install @kakao-yanoo-kim/prometheus-mcp-server-py --client claude
+```
+
+### Manual Installation
 ```bash
 pipx install git+https://github.com/kakao-yanoo-kim/prometheus-mcp-server-py.git
 ```
