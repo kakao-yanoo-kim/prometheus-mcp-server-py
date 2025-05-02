@@ -1,0 +1,66 @@
+# Smithery configuration file: https://smithery.ai/docs/config#smitheryyaml
+
+startCommand:
+  type: stdio
+  configSchema:
+    # JSON Schema defining the configuration options for the MCP.
+    type: object
+    required:
+      - url
+    properties:
+      url:
+        type: string
+        description: Prometheus server URL
+      username:
+        type: string
+        description: Username for basic authentication
+      password:
+        type: string
+        description: Password for basic authentication
+      token:
+        type: string
+        description: Token for authentication
+      orgId:
+        type: string
+        description: Organization ID for multi-tenant setups
+      timeout:
+        type: number
+        default: 30
+        description: Evaluation timeout in seconds
+      limit:
+        type: number
+        default: 1000
+        description: Maximum number of returned series
+  commandFunction:
+    # A JS function that produces the CLI command based on the given config to start the MCP on stdio.
+    |-
+    (config) => {
+      const args = ['--url', config.url];
+      if (config.username) {
+        args.push('--username', config.username);
+      }
+      if (config.password) {
+        args.push('--password', config.password);
+      }
+      if (config.token) {
+        args.push('--token', config.token);
+      }
+      if (config.orgId) {
+        args.push('--org-id', config.orgId);
+      }
+      if (config.timeout !== undefined) {
+        args.push('--timeout', config.timeout.toString());
+      }
+      if (config.limit !== undefined) {
+        args.push('--limit', config.limit.toString());
+      }
+      return { command: 'prometheus-mcp', args };
+    }
+  exampleConfig:
+    url: http://localhost:9090
+    username: admin
+    password: secret
+    token: my-token
+    orgId: org-123
+    timeout: 30
+    limit: 1000
