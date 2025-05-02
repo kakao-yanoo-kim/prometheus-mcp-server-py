@@ -5,7 +5,7 @@ A tool that allows access to Prometheus data through a Model Context Protocol se
 ## Installation
 
 ```bash
-pipx install git+https://github.com/moohoorama/prometheus-mcp-server-py.git
+pipx install git+https://github.com/kakao-yanoo-kim/prometheus-mcp-server-py.git
 ```
 
 ### Run Without Installation
@@ -13,7 +13,7 @@ pipx install git+https://github.com/moohoorama/prometheus-mcp-server-py.git
 You can also run the package directly without installing it using `pipx run`:
 
 ```bash
-pipx run --spec git+https://github.com/moohoorama/prometheus-mcp-server-py.git prometheus-mcp --url http://your-prometheus-server:9090
+pipx run --spec git+https://github.com/kakao-yanoo-kim/prometheus-mcp-server-py.git prometheus-mcp --url http://your-prometheus-server:9090
 ```
 
 This is useful for testing or one-time usage scenarios.
