@@ -1,0 +1,18 @@
+[build-system]
+requires = ["setuptools>=42", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "prometheus-mcp-server"
+version = "0.1.0"
+description = "Prometheus Model Context Protocol Server"
+readme = "README.md"
+requires-python = ">=3.8"
+license = {text = "MIT"}
+dependencies = [
+    "requests",
+    "fastmcp>=0.1.0",  # 'mcp-server' 대신 PyPI에 있는 패키지 사용
+]
+
+[project.scripts]
+prometheus-mcp = "prometheus_mcp.cli:main"

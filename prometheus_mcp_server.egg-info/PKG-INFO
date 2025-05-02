@@ -1,0 +1,10 @@
+Metadata-Version: 2.4
+Name: prometheus-mcp-server
+Version: 0.1.0
+Summary: Prometheus Model Context Protocol Server
+License: MIT
+Requires-Python: >=3.8
+Description-Content-Type: text/markdown
+Requires-Dist: requests
+Requires-Dist: python-dotenv
+Requires-Dist: fastmcp>=0.1.0

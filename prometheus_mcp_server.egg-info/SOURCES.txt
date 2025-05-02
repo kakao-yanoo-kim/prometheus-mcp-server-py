@@ -1,0 +1,10 @@
+README.md
+pyproject.toml
+prometheus_mcp/__init__.py
+prometheus_mcp/cli.py
+prometheus_mcp_server.egg-info/PKG-INFO
+prometheus_mcp_server.egg-info/SOURCES.txt
+prometheus_mcp_server.egg-info/dependency_links.txt
+prometheus_mcp_server.egg-info/entry_points.txt
+prometheus_mcp_server.egg-info/requires.txt
+prometheus_mcp_server.egg-info/top_level.txt

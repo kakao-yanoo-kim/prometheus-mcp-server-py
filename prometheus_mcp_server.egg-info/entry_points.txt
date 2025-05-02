@@ -1,0 +1,2 @@
+[console_scripts]
+prometheus-mcp = prometheus_mcp.cli:main
