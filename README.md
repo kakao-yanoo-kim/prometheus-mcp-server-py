@@ -1,3 +1,5 @@
+[![MseeP.ai Security Assessment Badge](https://mseep.net/pr/kakao-yanoo-kim-prometheus-mcp-server-py-badge.png)](https://mseep.ai/app/kakao-yanoo-kim-prometheus-mcp-server-py)
+
 # Prometheus MCP Server
 [![smithery badge](https://smithery.ai/badge/@kakao-yanoo-kim/prometheus-mcp-server-py)](https://smithery.ai/server/@kakao-yanoo-kim/prometheus-mcp-server-py)
 
